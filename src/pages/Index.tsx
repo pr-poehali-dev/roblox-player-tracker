@@ -1,224 +1,239 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Icon from '@/components/ui/icon';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-interface PlayerActivity {
-  timestamp: string;
-  action: string;
+interface Player {
+  username: string;
+  status: 'online' | 'offline';
   game: string;
-  location: string;
+  lastSeen: string;
 }
 
+interface Camera {
+  id: string;
+  location: string;
+  status: 'active' | 'inactive';
+}
+
+interface ChatMessage {
+  admin: string;
+  message: string;
+  time: string;
+}
+
+const players: Player[] = [
+  { username: 'simulation', status: 'offline', game: 'N/A', lastSeen: '2 days ago' },
+  { username: 'potatosalad63', status: 'online', game: 'Blox Fruits', lastSeen: 'Online now' },
+  { username: 'xXDarkGamerXx', status: 'online', game: 'Adopt Me!', lastSeen: 'Online now' },
+  { username: 'NoobMaster420', status: 'online', game: 'Brookhaven', lastSeen: 'Online now' },
+  { username: 'ProBuilder99', status: 'offline', game: 'N/A', lastSeen: '4 hours ago' },
+  { username: 'SkyWalker_YT', status: 'online', game: 'Tower of Hell', lastSeen: 'Online now' }
+];
+
+const cameras: Camera[] = [
+  { id: 'CAM-001', location: 'Main Lobby', status: 'active' },
+  { id: 'CAM-002', location: 'Server Room A', status: 'active' },
+  { id: 'CAM-003', location: 'Player Zone B', status: 'inactive' },
+  { id: 'CAM-004', location: 'Trade Hub', status: 'active' },
+  { id: 'CAM-005', location: 'PvP Arena', status: 'active' },
+  { id: 'CAM-006', location: 'Private Server 47', status: 'inactive' }
+];
+
+const adminChat: ChatMessage[] = [
+  { admin: 'AdminMike', message: 'lmao did you see NoobMaster420 trying to scam people?', time: '10:23 AM' },
+  { admin: 'ModSarah', message: 'yeah hahahaha dude got scammed himself', time: '10:24 AM' },
+  { admin: 'AdminMike', message: 'potatosalad63 is grinding hard tho, respect', time: '10:26 AM' },
+  { admin: 'AdminJake', message: 'simulation still hasn\'t come back online lol', time: '10:28 AM' },
+  { admin: 'ModSarah', message: 'probably got banned again haha', time: '10:29 AM' },
+  { admin: 'AdminMike', message: 'xXDarkGamerXx is such a tryhard', time: '10:31 AM' },
+  { admin: 'AdminJake', message: 'fr fr, kid plays 24/7', time: '10:32 AM' },
+  { admin: 'ModSarah', message: 'someone should check CAM-003, it went offline', time: '10:35 AM' },
+  { admin: 'AdminMike', message: 'on it', time: '10:36 AM' }
+];
+
 export default function Index() {
-  const [username, setUsername] = useState('');
-  const [isTracking, setIsTracking] = useState(false);
-  const [glitchText, setGlitchText] = useState('ROBLOX TRACKER');
-  const [activities, setActivities] = useState<PlayerActivity[]>([]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const chars = 'ROBLOX TRACKER'.split('');
-      const glitched = chars.map(char => 
-        Math.random() > 0.9 ? String.fromCharCode(33 + Math.random() * 94) : char
-      ).join('');
-      setGlitchText(glitched);
-      setTimeout(() => setGlitchText('ROBLOX TRACKER'), 50);
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (isTracking) {
-      const interval = setInterval(() => {
-        const mockActivities: PlayerActivity[] = [
-          {
-            timestamp: new Date().toLocaleTimeString(),
-            action: Math.random() > 0.5 ? 'JOINED GAME' : 'LEFT GAME',
-            game: ['Adopt Me!', 'Brookhaven', 'Tower of Hell', 'Blox Fruits'][Math.floor(Math.random() * 4)],
-            location: `Server ${Math.floor(Math.random() * 999)}`
-          }
-        ];
-        setActivities(prev => [...mockActivities, ...prev].slice(0, 10));
-      }, 2000);
-
-      return () => clearInterval(interval);
-    }
-  }, [isTracking]);
-
-  const handleTrack = () => {
-    if (username.trim()) {
-      setIsTracking(true);
-      setActivities([{
-        timestamp: new Date().toLocaleTimeString(),
-        action: 'TRACKING STARTED',
-        game: 'System',
-        location: 'Initializing...'
-      }]);
-    }
-  };
+  const [showCameraDialog, setShowCameraDialog] = useState(false);
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent animate-scan"></div>
-      </div>
-
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjIwIiBoZWlnaHQ9IjIwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDIwIDAgTCAwIDAgMCAyMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwgMjU1LCAyNTUsIDAuMDMpIiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-20"></div>
 
       <div className="relative z-10 container mx-auto px-4 py-8">
-        <Alert className="mb-6 border-accent bg-accent/10 animate-flicker">
+        <Alert className="mb-6 border-accent bg-accent/10">
           <Icon name="AlertTriangle" className="h-5 w-5 text-accent" />
           <AlertDescription className="text-accent font-mono">
-            ⚠️ ВНИМАНИЕ: Этот сайт часто блокируется и переезжает на новые домены. Сохраните ссылку!
+            ⚠️ WARNING: This site is frequently taken down and moves to new domains. Save the link!
           </AlertDescription>
         </Alert>
 
         <div className="text-center mb-12">
-          <h1 className="text-6xl font-bold mb-4 text-primary animate-glitch" style={{ fontFamily: 'monospace' }}>
-            {glitchText}
+          <h1 className="text-6xl font-bold mb-4 text-primary" style={{ fontFamily: 'monospace' }}>
+            ROBLOX TRACKER
           </h1>
-          <p className="text-muted-foreground text-lg mb-2">Система мониторинга активности игроков в реальном времени</p>
+          <p className="text-muted-foreground text-lg mb-2">Real-time player monitoring system</p>
           <Badge variant="destructive" className="animate-pulse">BETA v0.8.3</Badge>
         </div>
 
-        <Card className="mb-8 border-primary/20 bg-card/50 backdrop-blur">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Icon name="Info" className="h-5 w-5" />
-              Что такое Roblox Tracker?
-            </CardTitle>
-            <CardDescription>Система отслеживания игровой активности</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm">
-              <span className="text-primary font-bold">Roblox Tracker</span> — это инструмент для мониторинга активности любого игрока в Roblox. 
-              Наша система позволяет видеть:
-            </p>
-            <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
-              <li>В какие игры заходит пользователь</li>
-              <li>Время входа и выхода из игр</li>
-              <li>На каких серверах играет</li>
-              <li>Активность в реальном времени</li>
-            </ul>
-            <div className="flex items-start gap-2 p-3 bg-secondary/20 rounded border border-secondary">
-              <Icon name="Shield" className="h-5 w-5 text-secondary mt-0.5" />
-              <p className="text-xs text-secondary">
-                Данные собираются через публичные API. Мы не храним персональную информацию.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="players" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="players">
+              <Icon name="Users" className="h-4 w-4 mr-2" />
+              Players
+            </TabsTrigger>
+            <TabsTrigger value="cameras">
+              <Icon name="Camera" className="h-4 w-4 mr-2" />
+              Cameras
+            </TabsTrigger>
+            <TabsTrigger value="chat">
+              <Icon name="MessageSquare" className="h-4 w-4 mr-2" />
+              Admin Chat
+            </TabsTrigger>
+          </TabsList>
 
-        <Card className="border-primary/30 bg-card/80 backdrop-blur">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Icon name="Search" className="h-5 w-5" />
-              Начать отслеживание
-            </CardTitle>
-            <CardDescription className="font-mono text-xs">
-              {isTracking ? '●ㅤCONNECTED' : '○ㅤDISCONNECTED'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Введите username игрока..."
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                disabled={isTracking}
-                className="font-mono"
-              />
-              <Button 
-                onClick={handleTrack} 
-                disabled={isTracking || !username.trim()}
-                className="min-w-[120px]"
-              >
-                {isTracking ? (
-                  <>
-                    <Icon name="Loader2" className="h-4 w-4 mr-2 animate-spin" />
-                    Идёт сбор...
-                  </>
-                ) : (
-                  <>
-                    <Icon name="Play" className="h-4 w-4 mr-2" />
-                    Начать
-                  </>
-                )}
-              </Button>
-            </div>
-
-            {isTracking && (
-              <Button 
-                variant="destructive" 
-                onClick={() => {
-                  setIsTracking(false);
-                  setActivities([]);
-                  setUsername('');
-                }}
-                className="w-full"
-              >
-                <Icon name="StopCircle" className="h-4 w-4 mr-2" />
-                Остановить мониторинг
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-
-        {isTracking && (
-          <Card className="mt-6 border-secondary/30 bg-card/80 backdrop-blur">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Icon name="Activity" className="h-5 w-5 text-secondary animate-pulse" />
-                Активность игрока: {username}
-              </CardTitle>
-              <CardDescription className="font-mono text-xs">Обновление каждые 2 сек</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {activities.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Icon name="Loader2" className="h-8 w-8 mx-auto mb-2 animate-spin" />
-                    <p className="text-sm">Загрузка данных...</p>
-                  </div>
-                ) : (
-                  activities.map((activity, idx) => (
+          <TabsContent value="players" className="space-y-4">
+            <Card className="border-primary/20 bg-card/80 backdrop-blur">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="Users" className="h-5 w-5" />
+                  Tracked Players
+                </CardTitle>
+                <CardDescription>Live player activity monitoring</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {players.map((player, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between p-3 rounded bg-muted/30 border border-muted hover:border-secondary/50 transition-all animate-fade-in"
-                      style={{ animationDelay: `${idx * 0.05}s` }}
+                      className="flex items-center justify-between p-4 rounded-lg bg-muted/30 border border-muted hover:border-primary/50 transition-all"
                     >
-                      <div className="flex items-center gap-3">
-                        <Badge 
-                          variant={activity.action.includes('JOINED') ? 'default' : activity.action.includes('LEFT') ? 'secondary' : 'outline'}
-                          className="font-mono text-xs"
-                        >
-                          {activity.action}
-                        </Badge>
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className="bg-primary/20 text-primary">
+                            {player.username.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
                         <div>
-                          <p className="text-sm font-semibold">{activity.game}</p>
-                          <p className="text-xs text-muted-foreground">{activity.location}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold font-mono">{player.username}</p>
+                            <div className={`h-2 w-2 rounded-full ${player.status === 'online' ? 'bg-secondary animate-pulse' : 'bg-muted-foreground'}`}></div>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{player.game}</p>
                         </div>
                       </div>
-                      <span className="text-xs text-muted-foreground font-mono">{activity.timestamp}</span>
+                      <div className="text-right">
+                        <Badge variant={player.status === 'online' ? 'default' : 'secondary'} className="font-mono text-xs">
+                          {player.status.toUpperCase()}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-1">{player.lastSeen}</p>
+                      </div>
                     </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="cameras" className="space-y-4">
+            <Card className="border-primary/20 bg-card/80 backdrop-blur">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="Camera" className="h-5 w-5" />
+                  Security Cameras
+                </CardTitle>
+                <CardDescription>Server surveillance system</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {cameras.map((camera, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => setShowCameraDialog(true)}
+                      className="cursor-pointer p-4 rounded-lg bg-muted/30 border border-muted hover:border-accent transition-all"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Icon name="Camera" className="h-5 w-5 text-primary" />
+                          <p className="font-semibold font-mono">{camera.id}</p>
+                        </div>
+                        <Badge variant={camera.status === 'active' ? 'default' : 'secondary'} className="text-xs">
+                          {camera.status.toUpperCase()}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{camera.location}</p>
+                      <div className="mt-3 h-24 bg-black/50 rounded flex items-center justify-center">
+                        <Icon name="Lock" className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="chat" className="space-y-4">
+            <Card className="border-primary/20 bg-card/80 backdrop-blur">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Icon name="MessageSquare" className="h-5 w-5" />
+                  Admin Chat
+                </CardTitle>
+                <CardDescription className="flex items-center gap-2">
+                  <div className="h-2 w-2 bg-secondary rounded-full animate-pulse"></div>
+                  Live conversation
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                  {adminChat.map((msg, idx) => (
+                    <div key={idx} className="flex gap-3 p-3 rounded-lg bg-muted/30 border border-muted">
+                      <Avatar className="h-8 w-8 shrink-0">
+                        <AvatarFallback className="bg-accent/20 text-accent text-xs">
+                          {msg.admin.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-semibold text-accent">{msg.admin}</span>
+                          <span className="text-xs text-muted-foreground">{msg.time}</span>
+                        </div>
+                        <p className="text-sm">{msg.message}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         <div className="mt-12 text-center text-xs text-muted-foreground font-mono space-y-1">
-          <p className="animate-flicker">CONNECTION: UNSTABLE</p>
-          <p>SYSTEM STATUS: {Math.random() > 0.5 ? 'OPERATIONAL' : 'DEGRADED'}</p>
+          <p>CONNECTION: STABLE</p>
+          <p>SYSTEM STATUS: OPERATIONAL</p>
           <p className="text-primary">© 2024 RBLX-TRACK v0.8.3</p>
         </div>
       </div>
+
+      <Dialog open={showCameraDialog} onOpenChange={setShowCameraDialog}>
+        <DialogContent className="border-destructive">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Icon name="ShieldAlert" className="h-5 w-5" />
+              ACCESS DENIED
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              This feature is restricted to administrators only. You do not have sufficient permissions to view camera feeds.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-center py-6">
+            <Icon name="Lock" className="h-16 w-16 text-destructive/50" />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
